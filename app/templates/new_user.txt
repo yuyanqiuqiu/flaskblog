@@ -1,0 +1,2 @@
+{{ new_user_name }}你好:
+		欢迎来到Flasky
