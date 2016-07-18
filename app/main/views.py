@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*- 
 from datetime import datetime
 from flask import render_template, session, request, abort, redirect, url_for
+from flask_login import login_required
 
 from . import main  # 同级的用.
 from .forms import NameForm
@@ -27,3 +28,9 @@ def index():
         return redirect(url_for('.index'))
     return render_template('name.html', form=form, name=session.get('name'), \
                            known=session.get('known'))
+
+
+@main.route('/secret',methods=['GET','POST'])
+@login_required
+def secret():
+    return '只有登陆用户才可以看到内容'

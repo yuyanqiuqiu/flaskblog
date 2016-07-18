@@ -18,6 +18,7 @@ manager.add_command("shell", Shell(make_context=make_shell_context))
 manager.add_command("db", MigrateCommand)
 
 
+# 给shell添加test操作，直接输入 python manage.py test就可以执行test函数了
 @manager.command
 def test():
     """Run the unit tests."""
