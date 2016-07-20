@@ -5,6 +5,7 @@ from flask_mail import Mail
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+# 这个时候 __init__.py 相当于是app这个级别，与config同级
 from config import config
 
 bootstrap = Bootstrap()

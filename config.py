@@ -7,8 +7,8 @@ print basedir
 class Config():
 	# 生成防CSRF攻击串
 	SECRET_KEY = os.environ.get('SECRET_KEY') or 'b\x1c\x90\xe0\xa7\x847\x84'
-	# 数据库提交
-	SQLALCHEMY_COMMIT_TEARDOWN = True
+	# 每次请求结束后数据库自动提交
+	SQLALCHEMY_COMMIT_ON_TEARDOWN = True
 	# 邮件相关 
 	FLASKY_MAIL_SUBJECT_PREFIX = '[Flasky]'
 	FLASKY_MAIL_SENDER = 'Flasky Admin <new619@163.com>'

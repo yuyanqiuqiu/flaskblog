@@ -3,7 +3,12 @@ from datetime import datetime
 from flask import render_template, session, request, abort, redirect, url_for
 from flask_login import login_required
 
-from . import main  # 同级的用.
+# .表示同级目录下的__init__.py模块.
+# .forms表示同级目录下的 forms模块
+# ..models表示上级目录的models模块
+# 一个点表示一级目录
+
+from . import main  
 from .forms import NameForm
 from .. import db
 from ..models import User
@@ -26,8 +31,7 @@ def index():
         session['name'] = name
         form.name.data = ''
         return redirect(url_for('.index'))
-    return render_template('name.html', form=form, name=session.get('name'), \
-                           known=session.get('known'))
+    return render_template('name.html', form=form)
 
 
 @main.route('/secret',methods=['GET','POST'])

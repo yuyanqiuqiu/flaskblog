@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% import "bootstrap/wtf.html" as wtf %}	
+{% import 'bootstrap/wtf.html' as wtf %}
 
 {% block title %}
 Flaskblog-Login
@@ -11,11 +11,5 @@ Flaskblog-Login
 </div>
 <div class="col-md-4">
 	{{ wtf.quick_form(form) }}
-	<p>
-		New user?
-		<a href="{{ url_for('auth.register') }}">
-		    Click here to register
-		</a> 
-	</p>
 </div>
 {% endblock %}

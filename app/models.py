@@ -7,7 +7,7 @@ from . import login_manager
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(id=int(user_id))
+    return User.query.get(int(user_id))
 
 # 数据库实体
 class Role(db.Model):
@@ -22,6 +22,12 @@ class Role(db.Model):
 
 
 class User(UserMixin,db.Model):
+    '''
+    用户类
+
+    继承自UserMixin类，就不需要再去主动实现is_authenticated，get_id()
+    等几个属性和方法
+    '''
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True)
