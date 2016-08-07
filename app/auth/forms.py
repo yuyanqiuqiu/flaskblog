@@ -9,11 +9,11 @@ from ..models import User
 
 
 class LoginForm(Form):
-	email = StringField('Email',validators=[Required(),Length(6,128),
-												Email()])
-	password = PasswordField('Password',validators=[Required()])
-	remember_me = BooleanField('Remember Me?')
-	submit = SubmitField('Log In')
+	email = StringField(u'邮箱',validators=[Required(),Length(6,128),
+											Email()])
+	password = PasswordField(u'密码',validators=[Required()])
+	remember_me = BooleanField(u'记住我?')
+	submit = SubmitField(u'登录')
 
 
 class RegistrationForm(Form):
@@ -39,3 +39,10 @@ class RegistrationForm(Form):
 		if User.query.filter_by(username=field.data).first():
 			raise ValidationError(u'该用户名已经被占用了')
 
+
+class ChangePasswordForm(Form):
+	old_password = PasswordField(u'旧密码',validators=[Required()])
+	new_password = PasswordField(u'新密码',validators=[Required(),
+								EqualTo('new_password2',message=u'两次密码必须保持一致')])
+	new_password2 = PasswordField(u'确认密码',validators=[Required()])
+	submit = SubmitField(u'保存')
