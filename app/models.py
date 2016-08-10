@@ -96,6 +96,29 @@ class User(UserMixin, db.Model):
     def password(self, password):
         self.password_hash = generate_password_hash(password)
 
+    @staticmethod
+    def generate_fake(count=100):
+        from sqlalchemy.exc import IntegrityError
+        from random import seed
+        import forgery_py
+
+        seed()
+        for i in range(count):
+            u = User(email=forgery_py.internet.email_address(),
+                     username=forgery_py.internet.user_name(True),
+                     password=forgery_py.lorem_ipsum.word(),
+                     confirmed=True,
+                     name=forgery_py.name.full_name(),
+                     location=forgery_py.lorem_ipsum.sentence(),
+                     member_since=forgery_py.date.date(True))
+            db.session.add(u)
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+
+
+
     def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
 
@@ -130,6 +153,8 @@ class User(UserMixin, db.Model):
         db.session.add(self)
 
 
+
+
 class AnonymousUser(AnonymousUserMixin):
     def can(self, permissions):
         return False
@@ -153,7 +178,26 @@ class Blog(db.Model):
 
 class Post(db.Model):
     __tablename__ = 'posts'
-    id = db.Column(db.Index,primary_key=True)
+    id = db.Column(db.Integer,primary_key=True)
     body = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    @staticmethod
+    def generate_fake(count=100):
+        from sqlalchemy.exc import IntegrityError
+        from random import seed, randint
+        import forgery_py
+
+        user_count=User.query.count()
+        for i in range(count):
+            u = User.query.offset(randint(0,user_count-1)).first()
+            p = Post(body=forgery_py.lorem_ipsum.sentences(randint(1, 3)),
+                     timestamp=forgery_py.date.date(True),
+                     author=u)
+            db.session.add(p)
+
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()

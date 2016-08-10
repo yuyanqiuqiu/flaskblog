@@ -44,5 +44,8 @@
             注册时间:{{ moment(user.member_since).format('L') }}
             最后访问时间:{{ moment(user.last_seen).fromNow(refresh=True) }}
         </p>
+
+        <h3>发表的文章</h3>
+        {% include 'main/_posts.html' %}
 	</div>
-{% endblock %}
+{% endblock %}main/_posts.html
