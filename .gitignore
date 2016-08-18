@@ -3,3 +3,13 @@
 *.pyc
 
 *.pyc
+
+app/models.pyc
+
+app/models.pyc
+
+app/main/views.pyc
+
+config.pyc
+
+app/main/views.pyc

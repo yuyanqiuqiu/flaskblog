@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-from datetime import  datetime
+from datetime import datetime
 from . import db, login_manager
 from werkzeug import generate_password_hash, check_password_hash
 from flask_login import UserMixin, AnonymousUserMixin
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from flask import current_app
-from markdown import  markdown
+from markdown import markdown
 import bleach
 
 
@@ -65,7 +65,7 @@ class Follow(db.Model):
                             primary_key=True)
     followed_id = db.Column(db.Integer, db.ForeignKey('users.id'),
                             primary_key=True)
-    timestamp = db.Column(db.DateTime(), default=datetime.now)
+    timestamp = db.Column(db.DateTime, default=datetime.now)
 
 
 class User(UserMixin, db.Model):
@@ -80,13 +80,28 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), unique=True, index=True)
     password_hash = db.Column(db.String(128))
     email = db.Column(db.String(64), unique=True, index=True)
-    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
     confirmed = db.Column(db.Boolean, default=False)
     location = db.Column(db.String(64))
     about_me = db.Column(db.TEXT())
     member_since = db.Column(db.DateTime(), default=datetime.utcnow)
     last_seen = db.Column(db.DateTime(), default=datetime.utcnow)
-    posts = db.relationship('Post', backref='author', lazy='dynamic')
+
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
+    # posts = db.relationship('Post', backref='author', lazy='dynamic')
+
+    # 为了实现增加字段的多对多链接,改为两个一对多方式实现
+    # 关注谁,当前用户是主键,followed是被关注的用户
+    followed = db.relationship('Follow',
+                               foreign_keys=[Follow.follower_id],
+                               backref=db.backref('follower', lazy='joined'),
+                               lazy='dynamic',
+                               cascade='all, delete-orphan')
+    # 关注者,当前用户是外键
+    followers = db.relationship('Follow',
+                                foreign_keys=[Follow.followed_id],
+                                backref=db.backref('followed', lazy='joined'),
+                                lazy='dynamic',
+                                cascade='all, delete-orphan')
 
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
@@ -161,6 +176,28 @@ class User(UserMixin, db.Model):
         self.last_seen = datetime.utcnow()
         db.session.add(self)
 
+    # 关注用户
+    def follow(self, user):
+        if not self.is_following(user):
+            f = Follow(follower=self, followed=user)
+            db.session.add(f)
+
+    # 取关
+    def unfollow(self, user):
+        f = self.followed.filter_by(followed_id=user.id).first()
+        if not f:
+            db.session.delete(f)
+
+    # 是否关注某个用户
+    def is_following(self, user):
+        f = self.followed.filter_by(followed_id=user.id).first()
+        return f is not None
+
+    # 是否被某个用户关注
+    def is_followed_by(self, user):
+        f = self.followers.filter_by(follower_id=user.id).first()
+        return f is not None
+
 
 class AnonymousUser(AnonymousUserMixin):
     def can(self, permissions):
@@ -189,7 +226,9 @@ class Post(db.Model):
     body = db.Column(db.Text)
     body_html = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    author = db.relationship('User', backref=db.backref('posts', lazy='dynamic'))
 
     @staticmethod
     def generate_fake(count=100):

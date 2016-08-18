@@ -33,6 +33,7 @@ class DevelopmentConfig(Config):
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or \
                               'sqlite:///' + os.path.join(basedir, 'data-dev.sqlite')
+    # SQLALCHEMY_ECHO = True  # 输出sql脚本
 
 
 class TestingConfig(Config):

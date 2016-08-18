@@ -14,7 +14,7 @@ from . import main
 from .forms import NameForm, EditProfileForm, EditProfileAdminForm, \
     PostForm
 from .. import db
-from ..models import User, Permission, Post, Role
+from ..models import User, Permission, Post, Role, Follow
 from ..decorators import permission_required, admin_required
 from flask_login import current_user, flash, redirect
 
@@ -82,6 +82,38 @@ def user(username):
         abort(404)
     posts = Post.query.filter_by(author_id=show_user.id).order_by(Post.timestamp.desc()).all()
     return render_template('main/user.html', user=show_user, posts=posts)
+
+
+@main.route('/unfollow/<username>')
+def unfollow(username):
+    u = current_user.followed.filter_by(username=username)
+    if u is not None:
+        db.session.delete(u)
+    return redirect(url_for('.user', username=username))
+
+
+@main.route('/follow/<username>')
+def follow(username):
+    u = User.query.filter_by(username=username).first()
+    if u is None:
+        flash(u'未找到指定用户')
+        return redirect(url_for('.index'))
+    if current_user.is_following(u):
+        flash(u'你已经关注他了')
+        return redirect('.user', username=username)
+    current_user.follow(u)
+    flash(u'关注了{0}'.format(username))
+    return redirect(url_for('.user', username=username))
+
+
+@main.route('/followers/<username>')
+def followers(username):
+    return redirect(url_for('.user', username=username))
+
+
+@main.route('/followed_by/<username>')
+def followed_by(username):
+    return redirect(url_for('.user', username=username))
 
 
 @main.route('/edit_profile', methods=['GET', 'POST'])
