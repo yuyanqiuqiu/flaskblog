@@ -33,6 +33,28 @@ def index():
     return render_template('main/index.html', form=form, posts=posts,pagination=pagination)
 
 
+@main.route('/post/<int:id>')
+def post(id):
+    single_post = Post.query.get_or_404(id)
+    return render_template('main/post.html', posts=[single_post])
+
+
+@main.route('/edit/<int:id>', methods=['GET', 'POST'])
+def edit_post(id):
+    single_post = Post.query.get_or_404(id)
+    if current_user != single_post.author and \
+        not current_user.can(Permission.ADMINSTER):
+        abort(403)
+    form = PostForm()
+    if form.validate_on_submit():
+        single_post.body = form.body.data
+        db.session.add(single_post)
+        flash(u'修改成功')
+        return redirect(url_for('.post', id=id))
+    form.body.data = single_post.body
+    return render_template('main/edit_post.html', form=form)
+
+
 @main.route('/newuser', methods=['GET', 'POST'])
 def new_user():
     form = NameForm()

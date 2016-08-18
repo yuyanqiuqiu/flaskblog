@@ -5,6 +5,8 @@ from werkzeug import generate_password_hash, check_password_hash
 from flask_login import UserMixin, AnonymousUserMixin
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from flask import current_app
+from markdown import  markdown
+import bleach
 
 
 @login_manager.user_loader
@@ -55,6 +57,15 @@ class Role(db.Model):
 
             db.session.add(role)
         db.session.commit()
+
+
+class Follow(db.Model):
+    __tablename__ = 'Follow'
+    follower_id = db.Column(db.Integer, db.ForeignKey('users.id'),
+                            primary_key=True)
+    followed_id = db.Column(db.Integer, db.ForeignKey('users.id'),
+                            primary_key=True)
+    timestamp = db.Column(db.DateTime(), default=datetime.now)
 
 
 class User(UserMixin, db.Model):
@@ -117,8 +128,6 @@ class User(UserMixin, db.Model):
             except IntegrityError:
                 db.session.rollback()
 
-
-
     def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
 
@@ -153,8 +162,6 @@ class User(UserMixin, db.Model):
         db.session.add(self)
 
 
-
-
 class AnonymousUser(AnonymousUserMixin):
     def can(self, permissions):
         return False
@@ -180,6 +187,7 @@ class Post(db.Model):
     __tablename__ = 'posts'
     id = db.Column(db.Integer,primary_key=True)
     body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
@@ -201,3 +209,15 @@ class Post(db.Model):
                 db.session.commit()
             except IntegrityError:
                 db.session.rollback()
+
+    @staticmethod
+    def on_changed_body(target, value, oldvalue, initiator):
+        allow_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code',
+                             'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
+                             'h1', 'h2', 'h3', 'p']
+        target.body_html = bleach.linkify(bleach.clean(
+            markdown(value, output_format='html'), tags=allow_tags, strip=True))
+
+# 注册监听事件
+# 参数为 监听对象,监听方式,执行方法
+db.event.listen(Post.body, 'set', Post.on_changed_body)
