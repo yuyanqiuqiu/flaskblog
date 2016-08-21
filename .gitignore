@@ -23,3 +23,5 @@ app/main/views.pyc
 .idea/inspectionProfiles/profiles_settings.xml
 
 .idea/inspectionProfiles/Project_Default.xml
+
+*.pyc
