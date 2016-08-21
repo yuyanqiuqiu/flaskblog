@@ -30,7 +30,7 @@ def index():
     pagination = Post.query.order_by(Post.timestamp.desc()).paginate(
         page, per_page=current_app.config['FLASKY_POSTS_PER_PAGE'], error_out=False)
     posts = pagination.items
-    return render_template('main/index.html', form=form, posts=posts,pagination=pagination)
+    return render_template('main/index.html', form=form, posts=posts, pagination=pagination)
 
 
 @main.route('/post/<int:id>')
@@ -43,7 +43,7 @@ def post(id):
 def edit_post(id):
     single_post = Post.query.get_or_404(id)
     if current_user != single_post.author and \
-        not current_user.can(Permission.ADMINSTER):
+            not current_user.can(Permission.ADMINSTER):
         abort(403)
     form = PostForm()
     if form.validate_on_submit():
@@ -85,14 +85,20 @@ def user(username):
 
 
 @main.route('/unfollow/<username>')
+@login_required
+@permission_required(Permission.FOLLOW)
 def unfollow(username):
-    u = current_user.followed.filter_by(username=username)
-    if u is not None:
-        db.session.delete(u)
+    u = User.query.filter_by(username=username).first()
+    if u is None:
+        flash(u'未找到指定用户')
+    current_user.unfollow(u)
+    flash(u'你已经取消关注他了')
     return redirect(url_for('.user', username=username))
 
 
 @main.route('/follow/<username>')
+@login_required
+@permission_required(Permission.FOLLOW)
 def follow(username):
     u = User.query.filter_by(username=username).first()
     if u is None:
@@ -107,13 +113,41 @@ def follow(username):
 
 
 @main.route('/followers/<username>')
+@login_required
+@permission_required(Permission.FOLLOW)
 def followers(username):
-    return redirect(url_for('.user', username=username))
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash(u'未找到指定用户')
+        return redirect(url_for('.index'))
+    page = request.args.get('page', 1, type=int)
+    pagination = user.followers.paginate(
+        page, per_page=current_app.config['FLASKY_FOLLOWERS_PER_PAGE'],
+        error_out=False)
+    follows = [{'user': item.follower, 'timestamp': item.timestamp}
+               for item in pagination.items]
+    return render_template('main/followers.html', user=user, title=u'粉丝',
+                           endpoint='.followers', pagination=pagination,
+                           follows=follows)
 
 
 @main.route('/followed_by/<username>')
+@login_required
+@permission_required(Permission.FOLLOW)
 def followed_by(username):
-    return redirect(url_for('.user', username=username))
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash(u'未找到用户')
+        return redirect(url_for('.index'))
+    page = request.args.get('page', 1, type=int)
+    pagination = user.followed.paginate(
+        page, per_page=current_app.config['FLASKY_FOLLOWERS_PER_PAGE'],
+        error_out=False)
+    followed = [{'user': item.followed, 'timestamp': item.timestamp}
+                for item in pagination.items]
+    return render_template('main/followed.html', user=user, title=u'关注的用户',
+                           endpoint='.followed_by', pagination=pagination,
+                           followed=followed)
 
 
 @main.route('/edit_profile', methods=['GET', 'POST'])
@@ -184,4 +218,4 @@ def for_admins_only():
 @permission_required(Permission.MODERATE_COMMENTS)
 def for_moderators_only():
     return u'管理员管理评论页面'
-# ===================================================================
+    # ===================================================================

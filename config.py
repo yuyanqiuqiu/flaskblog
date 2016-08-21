@@ -4,8 +4,6 @@ import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 # print u'配置文件的路径是{0}'.format(basedir)
 
-print basedir
-
 
 class Config():
     # 生成防CSRF攻击串
@@ -18,6 +16,7 @@ class Config():
     FLASKY_ADMIN = os.environ.get('FLASKY_ADMIN')
     SQLALCHEMY_TRACK_MODIFICATIONS = True
     FLASKY_POSTS_PER_PAGE = 15
+    FLASKY_FOLLOWERS_PER_PAGE = 15
 
     @staticmethod
     def init_app(app):

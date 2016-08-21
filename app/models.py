@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from . import db, login_manager
+from app import db, login_manager
 from werkzeug import generate_password_hash, check_password_hash
 from flask_login import UserMixin, AnonymousUserMixin
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
@@ -61,8 +61,10 @@ class Role(db.Model):
 
 class Follow(db.Model):
     __tablename__ = 'Follow'
+    # 关注者id(粉丝)
     follower_id = db.Column(db.Integer, db.ForeignKey('users.id'),
                             primary_key=True)
+    # 被关注者id
     followed_id = db.Column(db.Integer, db.ForeignKey('users.id'),
                             primary_key=True)
     timestamp = db.Column(db.DateTime, default=datetime.now)
@@ -87,16 +89,17 @@ class User(UserMixin, db.Model):
     last_seen = db.Column(db.DateTime(), default=datetime.utcnow)
 
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
-    # posts = db.relationship('Post', backref='author', lazy='dynamic')
+    posts = db.relationship('Post', backref='author', lazy='dynamic')
 
     # 为了实现增加字段的多对多链接,改为两个一对多方式实现
-    # 关注谁,当前用户是主键,followed是被关注的用户
+    # 当前用户关注谁,followed是被关注的用户
+    # 所以当前用户id是Follow的外键follower_id
     followed = db.relationship('Follow',
                                foreign_keys=[Follow.follower_id],
                                backref=db.backref('follower', lazy='joined'),
                                lazy='dynamic',
                                cascade='all, delete-orphan')
-    # 关注者,当前用户是外键
+    # 当前用户的粉丝,当前用户是Follow的外键followed_id
     followers = db.relationship('Follow',
                                 foreign_keys=[Follow.followed_id],
                                 backref=db.backref('followed', lazy='joined'),
@@ -185,7 +188,7 @@ class User(UserMixin, db.Model):
     # 取关
     def unfollow(self, user):
         f = self.followed.filter_by(followed_id=user.id).first()
-        if not f:
+        if f:
             db.session.delete(f)
 
     # 是否关注某个用户
@@ -228,7 +231,7 @@ class Post(db.Model):
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
 
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    author = db.relationship('User', backref=db.backref('posts', lazy='dynamic'))
+    # author = db.relationship('User', backref=db.backref('posts', lazy='dynamic'))
 
     @staticmethod
     def generate_fake(count=100):
